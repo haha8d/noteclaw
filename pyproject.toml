@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "noteclaw"
+version = "1.0.0"
+description = "AI-friendly personal knowledge management system"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "haha8d", email = "your-email@example.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+vector = ["chromadb>=0.4.0", "sentence-transformers>=2.0.0"]
+fetch = ["requests>=2.25.0", "beautifulsoup4>=4.9.0"]
+ai = ["requests>=2.25.0", "beautifulsoup4>=4.9.0", "chromadb>=0.4.0", "sentence-transformers>=2.0.0"]
+all = ["requests>=2.25.0", "beautifulsoup4>=4.9.0", "chromadb>=0.4.0", "sentence-transformers>=2.0.0"]
+
+[project.scripts]
+noteclaw = "noteclaw.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/haha8d/noteclaw"
+Documentation = "https://haha8d.github.io/noteclaw"
+Repository = "https://github.com/haha8d/noteclaw.git"

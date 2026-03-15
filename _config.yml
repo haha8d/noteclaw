@@ -1,0 +1,12 @@
+# NoteClaw 文档站点
+
+theme: jekyll-theme-cayman
+title: NoteClaw
+-description: AI-friendly personal knowledge management system
+
+# 排除文件
+exclude:
+  - "*.py"
+  - "*.toml"
+  - "LICENSE"
+  - "CONTRIBUTING.md"
