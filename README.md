@@ -1,5 +1,7 @@
 # NoteClaw
 
+**中文** | [English](README-en.md)
+
 > AI友好的个人知识管理系统
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
