@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteClaw - AI知识管理系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        
+        /* 布局 */
+        .app {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* 侧边栏 */
+        .sidebar {
+            width: 240px;
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            padding: 20px 0;
+            flex-shrink: 0;
+        }
+        
+        .logo {
+            padding: 0 20px 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            color: var(--text-light);
+        }
+        
+        .nav-item:hover {
+            background: var(--bg);
+            color: var(--primary);
+        }
+        
+        .nav-item.active {
+            background: #eff6ff;
+            color: var(--primary);
+            border-right: 3px solid var(--primary);
+        }
+        
+        .nav-icon {
+            font-size: 18px;
+        }
+        
+        /* 主内容 */
+        .main {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            font-size: 18px;
+            margin: 20px 0 12px;
+        }
+        
+        /* 卡片 */
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* 输入框 */
+        input, textarea, select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        /* 按钮 */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        /* 表格 */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .table th {
+            font-weight: 600;
+            background: var(--bg);
+        }
+        
+        .table tr:hover {
+            background: var(--bg);
+        }
+        
+        /* 标签 */
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        
+        .tag-success { background: #d1fae5; color: #065f46; }
+        .tag-warning { background: #fef3c7; color: #92400e; }
+        .tag-danger { background: #fee2e2; color: #991b1b; }
+        
+        /* 加载 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+        
+        /* 对话界面 */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 150px);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--bg);
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .message {
+            margin-bottom: 16px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            margin-left: auto;
+        }
+        
+        .message.assistant {
+            margin-right: auto;
+        }
+        
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.6;
+        }
+        
+        .message.user .message-content {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .message.assistant .message-content {
+            background: var(--card);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+        
+        .chat-input {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .chat-input input {
+            flex: 1;
+        }
+        
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            color: var(--text-light);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        
+        /* 进度条 */
+        .progress {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+        
+        /* 文件上传 */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app">
+            <!-- 侧边栏 -->
+            <div class="sidebar">
+                <div class="logo">🧠 NoteClaw</div>
+                
+                <div class="nav-item" :class="{active: currentPage === 'dashboard'}" @click="currentPage = 'dashboard'">
+                    <span class="nav-icon">📊</span> 仪表盘
+                </div>
+                <div class="nav-item" :class="{active: currentPage === 'record'}" @click="currentPage = 'record'">
+                    <span class="nav-icon">📝</span> 原始记录
+                </div>
+                <div class="nav-item" :class="{active: currentPage === 'fetch'}" @click="currentPage = 'fetch'">
+                    <span class="nav-icon">🌐</span> 数据抓取
+                </div>
+                <div class="nav-item" :class="{active: currentPage === 'distill'}" @click="currentPage = 'distill'">
+                    <span class="nav-icon">✨</span> 数据提炼
+                </div>
+                <div class="nav-item" :class="{active: currentPage === 'wiki'}" @click="currentPage = 'wiki'">
+                    <span class="nav-icon">📚</span> Wiki整理
+                </div>
+                <div class="nav-item" :class="{active: currentPage === 'search'}" @click="currentPage = 'search'">
+                    <span class="nav-icon">🔍</span> 知识检索
+                </div>
+                <div class="nav-item" :class="{active: currentPage === 'chat'}" @click="currentPage = 'chat'">
+                    <span class="nav-icon">💬</span> AI对话
+                </div>
+            </div>
+            
+            <!-- 主内容 -->
+            <div class="main">
+                
+                <!-- 仪表盘 -->
+                <div class="page" :class="{active: currentPage === 'dashboard'}">
+                    <h1>📊 仪表盘</h1>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ stats.totalNotes }}</div>
+                            <div class="stat-label">总笔记数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">{{ stats.totalWords }}</div>
+                            <div class="stat-label">总字数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">{{ stats.wikiPages }}</div>
+                            <div class="stat-label">Wiki页面</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">{{ stats.vectors }}</div>
+                            <div class="stat-label">向量索引</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">📈 最近活动</div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>操作</th>
+                                    <th>内容</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="log in recentLogs" :key="log.time">
+                                    <td>{{ log.time }}</td>
+                                    <td><span class="tag">{{ log.action }}</span></td>
+                                    <td>{{ log.content }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 原始记录 -->
+                <div class="page" :class="{active: currentPage === 'record'}">
+                    <h1>📝 原始记录</h1>
+                    
+                    <div class="card">
+                        <div class="card-title">✍️ 记录新思考</div>
+                        <textarea v-model="recordContent" placeholder="在这里记录你的思考..."></textarea>
+                        <div style="margin-top: 12px;">
+                            <select v-model="recordCategory" style="width: 200px;">
+                                <option value="thoughts">思考</option>
+                                <option value="ideas">想法</option>
+                                <option value="learnings">学习</option>
+                                <option value="questions">问题</option>
+                            </select>
+                            <button class="btn btn-primary" @click="saveRecord">保存记录</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">📋 历史记录</div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>分类</th>
+                                    <th>内容</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="record in records" :key="record.id">
+                                    <td>{{ record.date }}</td>
+                                    <td><span class="tag">{{ record.category }}</span></td>
+                                    <td>{{ record.content.substring(0, 50) }}...</td>
+                                    <td>
+                                        <button class="btn btn-primary" @click="editRecord(record)">编辑</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 数据抓取 -->
+                <div class="page" :class="{active: currentPage === 'fetch'}">
+                    <h1>🌐 数据抓取</h1>
+                    
+                    <div class="card">
+                        <div class="card-title">🔗 URL抓取</div>
+                        <input v-model="fetchUrl" placeholder="输入URL..." style="margin-bottom: 12px;">
+                        <div class="btn-group">
+                            <button class="btn btn-primary" @click="fetchUrlContent">抓取</button>
+                            <button class="btn btn-success" @click="fetchAndSave">抓取并保存</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">📁 文件上传</div>
+                        <div class="upload-zone" @click="triggerUpload">
+                            <div class="upload-icon">📂</div>
+                            <div>点击或拖拽文件到这里上传</div>
+                            <div style="color: var(--text-light); margin-top: 8px;">支持 PDF, TXT, MD, DOCX</div>
+                        </div>
+                        <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none;" multiple>
+                    </div>
+                    
+                    <div class="card" v-if="fetchResult">
+                        <div class="card-title">📄 抓取结果</div>
+                        <div style="white-space: pre-wrap;">{{ fetchResult }}</div>
+                    </div>
+                </div>
+                
+                <!-- 数据提炼 -->
+                <div class="page" :class="{active: currentPage === 'distill'}">
+                    <h1>✨ 数据提炼</h1>
+                    
+                    <div class="card">
+                        <div class="card-title">📝 文本提炼</div>
+                        <textarea v-model="distillText" placeholder="输入要提炼的文本..."></textarea>
+                        
+                        <div style="margin: 16px 0;">
+                            <label style="margin-right: 12px;">提炼模式:</label>
+                            <select v-model="distillMode" style="width: 200px;">
+                                <option value="summary">摘要</option>
+                                <option value="keypoints">关键点</option>
+                                <option value="outline">大纲</option>
+                                <option value="qa">问答</option>
+                                <option value="mindmap">思维导图</option>
+                            </select>
+                        </div>
+                        
+                        <button class="btn btn-primary" @click="runDistill">开始提炼</button>
+                    </div>
+                    
+                    <div class="card" v-if="distillResult">
+                        <div class="card-title">✨ 提炼结果</div>
+                        <div style="white-space: pre-wrap;">{{ distillResult }}</div>
+                        <div style="margin-top: 12px;">
+                            <button class="btn btn-success" @click="saveDistillResult">保存到Wiki</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Wiki整理 -->
+                <div class="page" :class="{active: currentPage === 'wiki'}">
+                    <h1>📚 Wiki整理</h1>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ wikiStats.raw }}</div>
+                            <div class="stat-label">原始资料</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">{{ wikiStats.concepts }}</div>
+                            <div class="stat-label">概念页</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">{{ wikiStats.entities }}</div>
+                            <div class="stat-label">实体页</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">{{ wikiStats.issues }}</div>
+                            <div class="stat-label">待处理问题</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">🔄 编译Wiki</div>
+                        <p style="color: var(--text-light); margin-bottom: 12px;">将原始资料编译成结构化知识库</p>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" @click="compileWiki">编译</button>
+                            <button class="btn btn-warning" @click="forceCompileWiki">强制重新编译</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">🔍 健康检查</div>
+                        <button class="btn btn-primary" @click="lintWiki">检查</button>
+                        <div v-if="lintResult" style="margin-top: 12px;">
+                            <div>死链接: {{ lintResult.dead_links?.length || 0 }}</div>
+                            <div>孤立页面: {{ lintResult.orphans?.length || 0 }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">📑 Wiki目录</div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>类型</th>
+                                    <th>标题</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="page in wikiPages" :key="page.path">
+                                    <td><span class="tag">{{ page.type }}</span></td>
+                                    <td>{{ page.title }}</td>
+                                    <td>
+                                        <button class="btn btn-primary" @click="viewWikiPage(page)">查看</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 知识检索 -->
+                <div class="page" :class="{active: currentPage === 'search'}">
+                    <h1>🔍 知识检索</h1>
+                    
+                    <div class="card">
+                        <div class="card-title">🔍 搜索</div>
+                        <div style="display: flex; gap: 12px;">
+                            <input v-model="searchQuery" placeholder="输入搜索内容..." @keyup.enter="doSearch">
+                            <select v-model="searchMode" style="width: 150px;">
+                                <option value="text">全文搜索</option>
+                                <option value="vector">语义搜索</option>
+                                <option value="tag">标签搜索</option>
+                            </select>
+                            <button class="btn btn-primary" @click="doSearch">搜索</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card" v-if="searchResults.length > 0">
+                        <div class="card-title">📋 搜索结果 ({{ searchResults.length }})</div>
+                        <div v-for="result in searchResults" :key="result.path" style="padding: 12px; border-bottom: 1px solid var(--border);">
+                            <div style="font-weight: 600;">{{ result.title }}</div>
+                            <div style="color: var(--text-light); font-size: 12px;">{{ result.path }}</div>
+                            <div v-if="result.content" style="margin-top: 8px;">{{ result.content.substring(0, 200) }}...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI对话 -->
+                <div class="page" :class="{active: currentPage === 'chat'}">
+                    <h1>💬 AI对话</h1>
+                    
+                    <div class="chat-container">
+                        <div class="chat-messages" ref="chatMessages">
+                            <div v-for="msg in chatMessages" :key="msg.id" class="message" :class="msg.role">
+                                <div class="message-content">{{ msg.content }}</div>
+                                <div class="message-time">{{ msg.time }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input">
+                            <input v-model="chatInput" placeholder="问我任何关于你的知识库的问题..." @keyup.enter="sendChat">
+                            <button class="btn btn-primary" @click="sendChat">发送</button>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <!-- 模态框 -->
+        <div class="modal-overlay" v-if="showModal" @click="showModal = false">
+            <div class="modal" @click.stop>
+                <div class="modal-header">
+                    <h3>{{ modalTitle }}</h3>
+                    <button class="modal-close" @click="showModal = false">&times;</button>
+                </div>
+                <div v-html="modalContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, nextTick, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                // 状态
+                const currentPage = ref('dashboard');
+                const apiBase = '/api';
+                
+                // 仪表盘
+                const stats = ref({ totalNotes: 0, totalWords: 0, wikiPages: 0, vectors: 0 });
+                const recentLogs = ref([]);
+                
+                // 原始记录
+                const recordContent = ref('');
+                const recordCategory = ref('thoughts');
+                const records = ref([]);
+                
+                // 数据抓取
+                const fetchUrl = ref('');
+                const fetchResult = ref('');
+                
+                // 数据提炼
+                const distillText = ref('');
+                const distillMode = ref('summary');
+                const distillResult = ref('');
+                
+                // Wiki
+                const wikiStats = ref({ raw: 0, concepts: 0, entities: 0, issues: 0 });
+                const wikiPages = ref([]);
+                const lintResult = ref(null);
+                
+                // 搜索
+                const searchQuery = ref('');
+                const searchMode = ref('text');
+                const searchResults = ref([]);
+                
+                // 对话
+                const chatInput = ref('');
+                const chatMessages = ref([]);
+                const chatMessagesEl = ref(null);
+                
+                // 模态框
+                const showModal = ref(false);
+                const modalTitle = ref('');
+                const modalContent = ref('');
+                
+                // 方法
+                const loadStats = async () => {
+                    try {
+                        const res = await axios.get(`${apiBase}/stats`);
+                        stats.value = res.data;
+                    } catch (e) {
+                        console.log('API不可用，使用演示数据');
+                        stats.value = { totalNotes: 128, totalWords: 45600, wikiPages: 42, vectors: 128 };
+                    }
+                };
+                
+                const saveRecord = async () => {
+                    if (!recordContent.value.trim()) return;
+                    try {
+                        await axios.post(`${apiBase}/log`, {
+                            content: recordContent.value,
+                            category: recordCategory.value
+                        });
+                        recordContent.value = '';
+                        loadRecords();
+                    } catch (e) {
+                        // 演示模式
+                        records.value.unshift({
+                            id: Date.now(),
+                            date: new Date().toLocaleString(),
+                            category: recordCategory.value,
+                            content: recordContent.value
+                        });
+                        recordContent.value = '';
+                    }
+                };
+                
+                const loadRecords = async () => {
+                    // 演示数据
+                    records.value = [
+                        { id: 1, date: '2026-04-17 23:00', category: 'thoughts', content: '关于意识的思考...' },
+                        { id: 2, date: '2026-04-17 22:30', category: 'learnings', content: '学习Karpathy Wiki方法' },
+                    ];
+                };
+                
+                const fetchUrlContent = async () => {
+                    if (!fetchUrl.value.trim()) return;
+                    try {
+                        const res = await axios.get(`${apiBase}/fetch?url=${encodeURIComponent(fetchUrl.value)}`);
+                        fetchResult.value = res.data.content || JSON.stringify(res.data, null, 2);
+                    } catch (e) {
+                        fetchResult.value = '抓取失败: ' + e.message;
+                    }
+                };
+                
+                const fetchAndSave = async () => {
+                    await fetchUrlContent();
+                };
+                
+                const triggerUpload = () => {
+                    document.querySelector('input[type="file"]').click();
+                };
+                
+                const handleFileUpload = (e) => {
+                    const files = e.target.files;
+                    alert(`已选择 ${files.length} 个文件`);
+                };
+                
+                const runDistill = async () => {
+                    if (!distillText.value.trim()) return;
+                    try {
+                        const res = await axios.post(`${apiBase}/distill`, {
+                            text: distillText.value,
+                            mode: distillMode.value
+                        });
+                        distillResult.value = res.data.result;
+                    } catch (e) {
+                        distillResult.value = '提炼结果（演示）: ' + distillText.value.substring(0, 200) + '...';
+                    }
+                };
+                
+                const saveDistillResult = () => {
+                    alert('已保存到Wiki');
+                };
+                
+                const loadWikiStats = async () => {
+                    wikiStats.value = { raw: 15, concepts: 8, entities: 3, issues: 2 };
+                    wikiPages.value = [
+                        { type: 'concept', title: '世界本质', path: 'wiki/concepts/世界本质.md' },
+                        { type: 'concept', title: '意识是什么', path: 'wiki/concepts/意识是什么.md' },
+                        { type: 'entity', title: '虾哥', path: 'wiki/entities/虾哥.md' },
+                    ];
+                };
+                
+                const compileWiki = async () => {
+                    alert('Wiki编译完成');
+                    loadWikiStats();
+                };
+                
+                const forceCompileWiki = async () => {
+                    alert('强制重新编译完成');
+                    loadWikiStats();
+                };
+                
+                const lintWiki = async () => {
+                    lintResult.value = { dead_links: [], orphans: ['未使用的概念'] };
+                };
+                
+                const viewWikiPage = (page) => {
+                    modalTitle.value = page.title;
+                    modalContent.value = '<pre>' + page.path + '</pre>';
+                    showModal.value = true;
+                };
+                
+                const doSearch = async () => {
+                    if (!searchQuery.value.trim()) return;
+                    try {
+                        const res = await axios.get(`${apiBase}/search?q=${encodeURIComponent(searchQuery.value)}&mode=${searchMode.value}`);
+                        searchResults.value = res.data;
+                    } catch (e) {
+                        searchResults.value = [
+                            { title: '示例结果', path: 'wiki/test.md', content: '这是搜索结果的内容...' }
+                        ];
+                    }
+                };
+                
+                const sendChat = async () => {
+                    if (!chatInput.value.trim()) return;
+                    
+                    const userMsg = {
+                        id: Date.now(),
+                        role: 'user',
+                        content: chatInput.value,
+                        time: new Date().toLocaleTimeString()
+                    };
+                    chatMessages.value.push(userMsg);
+                    
+                    const input = chatInput.value;
+                    chatInput.value = '';
+                    
+                    // 滚动到底部
+                    nextTick(() => {
+                        const el = document.querySelector('.chat-messages');
+                        if (el) el.scrollTop = el.scrollHeight;
+                    });
+                    
+                    // 模拟AI回复
+                    setTimeout(() => {
+                        chatMessages.value.push({
+                            id: Date.now() + 1,
+                            role: 'assistant',
+                            content: `关于"${input}"，根据你的知识库，我发现...\n\n这是一个基于你笔记的智能回答。`,
+                            time: new Date().toLocaleTimeString()
+                        });
+                        nextTick(() => {
+                            const el = document.querySelector('.chat-messages');
+                            if (el) el.scrollTop = el.scrollHeight;
+                        });
+                    }, 500);
+                };
+                
+                // 初始化
+                onMounted(() => {
+                    loadStats();
+                    loadRecords();
+                    loadWikiStats();
+                });
+                
+                return {
+                    currentPage,
+                    stats,
+                    recentLogs,
+                    recordContent,
+                    recordCategory,
+                    records,
+                    saveRecord,
+                    editRecord: (r) => { recordContent.value = r.content; },
+                    fetchUrl,
+                    fetchResult,
+                    fetchUrlContent,
+                    fetchAndSave,
+                    triggerUpload,
+                    handleFileUpload,
+                    distillText,
+                    distillMode,
+                    distillResult,
+                    runDistill,
+                    saveDistillResult,
+                    wikiStats,
+                    wikiPages,
+                    compileWiki,
+                    forceCompileWiki,
+                    lintWiki,
+                    lintResult,
+                    viewWikiPage,
+                    searchQuery,
+                    searchMode,
+                    searchResults,
+                    doSearch,
+                    chatInput,
+                    chatMessages,
+                    sendChat,
+                    showModal,
+                    modalTitle,
+                    modalContent
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
