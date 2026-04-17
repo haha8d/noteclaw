@@ -1,126 +1,142 @@
-# NoteClaw
+# NoteClaw 🧠
 
-**中文** | [English](README-en.md)
-
-> AI友好的个人知识管理系统
+> 本地优先的AI知识管理系统 - 你的数据100%保存在本地
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-NoteClaw 是一个专为 AI 协作设计的本地笔记系统，采用纯 Markdown 格式，支持双向链接、全文搜索、向量语义搜索，并提供完整的 API 接口。
+---
 
-## ✨ 核心特性
+## ⚠️ 重要：数据隐私
 
-- 🤖 **AI原生** - 纯 Markdown + YAML Frontmatter，AI 可直接读取处理
-- 🔒 **隐私优先** - 本地存储，数据完全掌控
-- 🔍 **智能搜索** - SQLite 全文搜索 + ChromaDB 向量语义搜索
-- 🌐 **API接口** - 完整的 CRUD + AI 抓取/提炼接口
-- 📝 **双向链接** - `[[笔记名]]` 语法实现知识关联
-- 🚀 **简洁轻量** - 零依赖核心，渐进增强
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🔒 你的数据100%保存在本地                                  │
+│                                                             │
+│  • 不上传云端                                               │
+│  • 不需要联网也能使用                                        │
+│  • 敏感知识建议只在本机运行                                  │
+│  • 如需局域网访问，请设置密码                                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ✨ 特性
+
+- 🤖 **AI原生** - 专为AI协作设计
+- 🔒 **本地优先** - 数据完全保存在本地
+- 📝 **Markdown** - 纯文本，可备份、可版本控制
+- 🔗 **双向链接** - `[[笔记名]]` 知识关联
+- 💬 **AI对话** - 基于知识库的智能问答
+- 🎨 **Web界面** - 浏览器直接渲染Markdown
+
+---
 
 ## 🚀 快速开始
 
-### 安装
-
 ```bash
-# 方式1: pip 安装
-pip install noteclaw
-
-# 方式2: 源码安装
+# 1. 克隆
 git clone https://github.com/haha8d/noteclaw.git
 cd noteclaw
-pip install -e .
+
+# 2. 启动（推荐本机模式）
+python launcher.py
+
+# 3. 打开浏览器
+# 访问 http://localhost:8080
 ```
 
-### 初始化
+---
+
+## 📖 详细用法
+
+### 命令行选项
 
 ```bash
-noteclaw init ~/my-notes
-cd ~/my-notes
+python launcher.py [选项]
+
+选项:
+  --data, -d        数据目录（默认: ./data）
+  --port, -p        端口（默认: 8080）
+  --password, -pwd  访问密码（可选）
+  --host            绑定地址
+                    localhost = 仅本机访问
+                    0.0.0.0   = 局域网可访问
+  --no-browser      不自动打开浏览器
 ```
 
-### 启动服务器
+### 推荐用法
 
 ```bash
-noteclaw serve --port 8081
+# 本机私密使用（推荐）
+python launcher.py
+
+# 局域网共享（需设置密码）
+python launcher.py --host 0.0.0.0 --password your_password
+
+# 指定数据目录
+python launcher.py --data ~/my-notes
 ```
 
-访问 http://localhost:8081/
+---
 
-## 📖 使用指南
+## 📁 目录结构
 
-### CLI 命令
-
-```bash
-# 基础操作
-noteclaw create "标题" --content "内容"
-noteclaw search "关键词"
-noteclaw list
-
-# AI 功能
-noteclaw fetch "https://example.com/article"
-noteclaw distill article.txt --mode summary
-
-# API Token 管理
-noteclaw token create --name "AI Assistant"
+```
+noteclaw/
+├── launcher.py       # 启动器
+├── web/
+│   └── index.html   # Web界面
+├── data/            # 数据目录（你的笔记）
+│   ├── wiki/
+│   │   ├── 概念/   # 概念页
+│   │   └── 实体/   # 实体页
+│   └── raw/        # 原始记录
+└── README.md
 ```
 
-### API 接口
-
-```bash
-# 创建笔记
-curl -X POST http://localhost:8081/api/note \
-  -H "Authorization: Bearer <token>" \
-  -d '{"title": "新笔记", "content": "内容"}'
-
-# 抓取网页
-curl -X POST http://localhost:8081/api/fetch \
-  -H "Authorization: Bearer <token>" \
-  -d '{"url": "https://example.com"}'
-
-# 提炼文本
-curl -X POST http://localhost:8081/api/distill \
-  -H "Authorization: Bearer <token>" \
-  -d '{"text": "长文本...", "mode": "summary"}'
-```
+---
 
 ## 🏗️ 架构
 
 ```
-noteclaw/
-├── core/           # 核心引擎
-│   ├── __init__.py
-│   ├── database.py # SQLite 索引
-│   └── vector.py   # ChromaDB 向量索引
-├── cli/            # 命令行工具
-│   ├── __init__.py
-│   └── main.py
-├── api/            # HTTP API
-│   ├── __init__.py
-│   └── server.py
-└── web/            # Web 界面
-    └── index.html
+┌─────────────────────────────────────────────────────────┐
+│                    Web 界面 (浏览器)                    │
+│    📝 记录 | 📚 知识库 | 🔍 搜索 | 💬 AI对话           │
+└─────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────┐
+│              本地 Python 服务器                          │
+│    • 文件读写 API                                        │
+│    • Markdown 渲染                                       │
+│    • 搜索引擎                                            │
+└─────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────┐
+│              本地文件系统 (你的数据)                      │
+│    • data/wiki/概念/*.md                                │
+│    • data/wiki/实体/*.md                                 │
+│    • data/raw/*.md                                       │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## 📚 文档
+---
 
-- [安装指南](docs/install.md)
-- [API 文档](docs/api.md)
-- [AI 接口文档](docs/ai-api.md)
-- [架构设计](docs/architecture.md)
+## 🔐 安全建议
+
+1. **敏感内容只在本机运行** - 不暴露到局域网
+2. **定期备份** - `data/` 目录复制一份
+3. **版本控制** - 用 Git 管理 `data/` 目录
+4. **局域网访问必须设密码** - `--password`
+
+---
 
 ## 🤝 贡献
 
-欢迎贡献代码！请阅读 [贡献指南](CONTRIBUTING.md)。
-
-## 📄 许可证
-
-MIT License - 详见 [LICENSE](LICENSE) 文件
-
-## 🔗 链接
-
-- [GitHub](https://github.com/haha8d/noteclaw)
-- [文档站点](https://haha8d.github.io/noteclaw)
+欢迎提交 Issue 和 PR！
 
 ---
 

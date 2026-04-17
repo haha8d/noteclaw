@@ -263,7 +263,9 @@ category: {category}
 def main():
     import argparse
     
-    parser = argparse.ArgumentParser(description='NoteClaw 本地服务器')
+    parser = argparse.ArgumentParser(description="NoteClaw 本地知识管理系统")
+    parser.add_argument("--password", "-pwd", default="", help="访问密码（可选）")
+    parser.add_argument("--host", default="localhost", help="绑定地址（localhost=仅本机，0.0.0.0=局域网可访问）")
     parser.add_argument('--data', '-d', default=None, help='数据目录路径')
     parser.add_argument('--port', '-p', type=int, default=8080, help='端口')
     parser.add_argument('--no-browser', action='store_true', help='不自动打开浏览器')
